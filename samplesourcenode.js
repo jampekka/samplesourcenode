@@ -22,8 +22,18 @@ class SampleSourceNode_ extends AudioWorkletNode {
 	}
 
 	start(at) {
-		at = at ?? this.context.currentTime
-		this.startAt.value = at
+		// Doing it like this may loose a couple of samples
+		// at the beginning if we start non-suspended. To do
+		// this properly, we should start at the earliest possible
+		// sample. We probably miss the first sample_start event here
+		// too!
+		at = at ?? this.context.currentTime;
+		this.startAt.value = at;
+	}
+
+	stop() {
+		// Can we schedule the stop with this?
+		this.startAt.value = -1;
 	}
 }
 

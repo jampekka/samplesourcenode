@@ -33,10 +33,11 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 
 		let output = outputs[0];
 		let startAt = parameters.startAt[0];
-		if(startAt < 0) {
+		if(startAt < 0 || startAt > currentTime + outputs.length[0]*sampleRate) {
 			// TODO: We skip playing rest of the buffer.
 			// TODO: We could return false here, but I don't know if this
 			// can be revived?
+			
 			return true;
 		}
 
@@ -55,8 +56,11 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 					source_i = source_i % loopEnd_i;
 				}
 
-				// Can this get missed? Is this expensive here?
+				// Can this get missed if we drop frames?
+				// Can we drop frames?
+				// Is this expensive here?
 				// We can miss the first play in the loop?
+				// Should we try to pre-empt the event latency?
 				if(source_i == 0 && ch == 0) {
 					this.port.postMessage({
 						type: "sample_start",

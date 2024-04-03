@@ -15,10 +15,10 @@ async function start() {
 		console.log(msg);
 	});
 
-	source.loopEnd.value = 1;
+	source.loopEnd.value = 0.5;
 	source.start();
 	source.connect(context.destination);
-	context.resume();
+	//source.stop();
 }
 
 document.addEventListener("click", start, {once: true});
