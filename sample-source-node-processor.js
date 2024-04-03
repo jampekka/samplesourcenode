@@ -5,15 +5,24 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 
 		this.start_i = currentFrame;
 		this.loopEnd_i = this.buffer_data[0].length;
-
-		/*
-		this.start_asap = false;
+		
+		this.startTime = -1;
+		this.startPending = false;
 		this.port.onmessage = (msg) => {
-			let t = msg.type;
-			if(t == "start_asap") {
-				this.start_asap = true;
+			let t = msg.data.type;
+			if(t == "start") {
+				this.startPending = true;
+				// Multiple starts will restart?
+				// Do we want this?
+				this.start_i = -1;
+
 			}
-		};*/
+
+			if(t == "stop") {
+				this.startPending = false;
+				this.start_i = -1;
+			}
+		};
 	}
 
 	static get parameterDescriptors() {
@@ -21,19 +30,23 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 		// TODO: Using negative values for disabling these. A bit ugly
 		// but makes things simpler.
 		return [
-			{name: "startAt", defaultValue: -1.0, automationRate: 'k-rate'},
+			// startAt as a param gets complicated when we want
+			// to start exactly on a process call. And automating it is not
+			// really needed ATM.
+			//{name: "startAt", defaultValue: -1.0, automationRate: 'k-rate'},
 			{name: "loopEnd", defaultValue: -1.0, automationRate: 'k-rate'},
 		]
 	}
 
 	process(inputs, outputs, parameters) {
-		//console.log("Processing", {inputs, outputs, parameters});
-		//console.log({currentFrame, currentTime, sampleRate});
-		
-
 		let output = outputs[0];
-		let startAt = parameters.startAt[0];
-		if(startAt < 0 || startAt > currentTime + outputs.length[0]*sampleRate) {
+		if(this.startPending) {
+			this.start_i = currentFrame;
+			this.startPending = false;
+		}
+
+		let startAt_i = this.start_i;
+		if(startAt_i < 0 || startAt_i > currentFrame + outputs.length[0]) {
 			// TODO: We skip playing rest of the buffer.
 			// TODO: We could return false here, but I don't know if this
 			// can be revived?
@@ -43,28 +56,28 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 
 		let loopEnd = parameters.loopEnd[0];
 		
-		let startAt_i = Math.round(startAt*sampleRate);
 		let loopEnd_i = Math.round(loopEnd*sampleRate);
 
 		for(let ch=0; ch < outputs.length; ++ch) {
 			let out = output[ch];
 			let buf = this.buffer_data[ch];
 			for(let i=0; i < out.length; ++i) {
-				let source_i = startAt_i + currentFrame + i;
+				let source_i = currentFrame - startAt_i + i;
 				// Loop back the buffer if we are looping
 				if(loopEnd_i > 0) {
 					source_i = source_i % loopEnd_i;
 				}
-
+				
 				// Can this get missed if we drop frames?
 				// Can we drop frames?
 				// Is this expensive here?
-				// We can miss the first play in the loop?
 				// Should we try to pre-empt the event latency?
 				if(source_i == 0 && ch == 0) {
+					// Get performance.now or something?
+					// Or do we get this in the message event?
 					this.port.postMessage({
 						type: "sample_start",
-						playbackTime: currentTime + sampleRate*i
+						playbackTime: currentTime + sampleRate*i,
 					});
 				}
 				

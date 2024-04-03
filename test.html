@@ -18,7 +18,8 @@ async function start() {
 	source.loopEnd.value = 0.5;
 	source.start();
 	source.connect(context.destination);
-	//source.stop();
+	context.resume();
+	document.addEventListener("click", (() => source.stop()), {once: true});
 }
 
 document.addEventListener("click", start, {once: true});
