@@ -1,5 +1,8 @@
 // TODO: Where to load this?
 
+// TODO: Figure out how to get rid of the underscore
+// TODO: Make buffer changeable, or at least make it mandatory
+// 	for the constructor.
 class SampleSourceNode_ extends AudioWorkletNode {
 	constructor(context, options) {
 		// TODO: We should probably await, but no can do on a constructor of course
@@ -141,3 +144,8 @@ class SampleSourceNodeProcessor extends AudioWorkletProcessor {
 registerProcessor("sample-source-node-processor", SampleSourceNodeProcessor);
 }
 
+if(typeof module == "undefined") {
+	module = {}
+}
+// TODO: Export the class as well
+module.exports = SampleSourceNode;
