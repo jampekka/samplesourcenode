@@ -1,0 +1,27 @@
+<html>
+<body>
+	<script src="samplesourcenode.js"></script>
+<script>
+async function start() {
+	let context = new AudioContext();
+	let buf = await fetch("click.flac");
+	//let buf = await fetch("snare.wav");
+	buf = await buf.arrayBuffer();
+	buf = await context.decodeAudioData(buf);
+	buf.channelInterpretation = "speakers"
+
+	let source = await SampleSourceNode(context, {buffer: buf});
+	source.port.onmessage = ((msg) => {
+		console.log(msg);
+	});
+
+	source.loopEnd.value = 1;
+	source.start();
+	source.connect(context.destination);
+	context.resume();
+}
+
+document.addEventListener("click", start, {once: true});
+</script>
+</body>
+</html>
